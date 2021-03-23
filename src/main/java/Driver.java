@@ -1,28 +1,46 @@
-import com.project1.annotations.Column;
-import com.project1.annotations.Id;
-import com.project1.annotations.Table;
 import com.project1.model.Car;
 import com.project1.model.Employee;
 import com.project1.orm.CustomPersistenceProvider;
-import org.reflections.Reflections;
-
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 public class Driver {
 
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public static void main(String[] args){
         Employee e = new Employee(1, "Joey Elmblad", (float) 50.30, "Pleb"); // float is type casted
-        Car c = new Car();// this is no arg so i can pass the object type to search for the tableName
+        Car c = new Car(1,"ford", (float) 50.50, false); //double needs to be casted to a float, wak, try double persision or something  instead maybe
         CustomPersistenceProvider cpp = new CustomPersistenceProvider();
+
+        cpp.dropTable(e);
+        cpp.dropTable(c);
+
+        cpp.persist(e);
+        cpp.persist(c);
+
+        cpp.insertInTable(e);//TODO: make a method to print the table columns out for the print statement
+        cpp.insertInTable(c);
+        Car c3 = new Car(2,"ford", (float) 50.50, false);
+
+        cpp.insertInTable(c3);
+
+        cpp.selectAllSql(e);//TODO: check these with multiple inserts
+        System.out.println("\n");
+        cpp.selectAllSql(c);
+        System.out.println("\n");
+        Employee e2 = (Employee) cpp.findById(e,1);// which is better input of class object or class name?
+        Car c2 = (Car) cpp.findById(c, 1);
+        System.out.println(c2.getName());
+        c2.setName("notFord");
+
+        cpp.updateTable(c2);
+
+        cpp.selectAllSql(c2);
+
+
 //        cpp.persist(e);
 //        cpp.insertInTable(e);
-//        Car c2 = new Car();
-        Car c2 = (Car) cpp.findByIdTest(Car.class,1); // type casted
-        c2.setName("notFord");
-        cpp.updateTable(c2);//TODO: make this method first.
-        cpp.selectAllSql(c2);//to check if ford changes to notFord
+//        Car c2 = (Car) cpp.findByIdTest(Car.class,1); // type casted
+//        c2.setName("notFord");
+//        cpp.updateTable(c2);
+//        cpp.selectAllSql(c2);//to check if ford changes to notFord
 
 
 

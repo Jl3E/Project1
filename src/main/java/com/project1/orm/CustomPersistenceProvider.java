@@ -22,13 +22,13 @@ public class CustomPersistenceProvider {
 
     public void persist(Object o) {
 
-        if(doesTableExist(o)){
+        if (doesTableExist(o)) {
             System.out.println("Table exists alright");
 
-        }else{
+        } else {
             String sql = createTableSQL(o);
 
-            try{
+            try {
                 Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
                 int i = st.executeUpdate(sql);
                 System.out.println("The number of updated rows were " + i);
@@ -65,7 +65,7 @@ public class CustomPersistenceProvider {
         return false;
     }
 
-    public String createTableSQL(Object o){
+    public String createTableSQL(Object o) {
         Queue<String> columns = new LinkedList<>();//this holds the table names and data types
 
         Class clazz = o.getClass();
@@ -73,12 +73,12 @@ public class CustomPersistenceProvider {
         String className = o.getClass().getSimpleName(); // this gives the classname to be used as the table name
 
         //this get my annotations from the class of Object o passed and the annotations .name() gives the column name and .dataType() gives the sql data type acceptable for user
-        for(Field f: fields){
-            if(f.getAnnotation(com.project1.annotations.Id.class) != null){
+        for (Field f : fields) {
+            if (f.getAnnotation(com.project1.annotations.Id.class) != null) {
                 columns.add(f.getAnnotation(com.project1.annotations.Id.class).name());
                 columns.add(f.getAnnotation(com.project1.annotations.Id.class).dataType());
             }
-            if(f.getAnnotation(com.project1.annotations.Column.class) != null) {
+            if (f.getAnnotation(com.project1.annotations.Column.class) != null) {
                 columns.add(f.getAnnotation(Column.class).name());
                 columns.add(f.getAnnotation(Column.class).dataType());
             }
@@ -87,15 +87,15 @@ public class CustomPersistenceProvider {
         StringBuilder sqlBuilder = new StringBuilder();
 
         sqlBuilder.append("create table ");
-        sqlBuilder.append(className.toLowerCase()+"(");
-        int size = columns.size()/2;
+        sqlBuilder.append(className.toLowerCase() + "(");
+        int size = columns.size() / 2;
 
-        for(int i=0; i < size; i++){
-            if (columns.size() == 2){ // this is hard coded as 2 because the last two elements in the queue will be the column name and data type
-                sqlBuilder.append(columns.poll()+" "+columns.poll()+");");
+        for (int i = 0; i < size; i++) {
+            if (columns.size() == 2) { // this is hard coded as 2 because the last two elements in the queue will be the column name and data type
+                sqlBuilder.append(columns.poll() + " " + columns.poll() + ");");
                 break;
             }
-            sqlBuilder.append(columns.poll()+" "+columns.poll()+", ");
+            sqlBuilder.append(columns.poll() + " " + columns.poll() + ", ");
         }
         //System.out.println(sqlBuilder); // to test the database with first
 
@@ -104,7 +104,7 @@ public class CustomPersistenceProvider {
         return sql;
     }
 
-    public void insertInTable(Object o){
+    public void insertInTable(Object o) {
 //        Queue<String> data = new LinkedList<>();//this holds the table names and data types
 
         Class clazz = o.getClass();
@@ -120,35 +120,35 @@ public class CustomPersistenceProvider {
         StringBuilder sqlBuilder = new StringBuilder();
 
         sqlBuilder.append("insert into ");
-        sqlBuilder.append(className.toLowerCase()+" values (");
+        sqlBuilder.append(className.toLowerCase() + " values (");
         int size = entries.size();
         int indexValues = 0;
-        for (Map.Entry<String, JsonElement> entry: entries) {
+        for (Map.Entry<String, JsonElement> entry : entries) {
             String check = String.valueOf(entry.getValue());
-            if(check.contains("\"")){
+            if (check.contains("\"")) {
 //                System.out.println("yea it contains \" what about it? HUH?!"); // needed to replace (")'s w/ (')'s
-                String newCheck = check.replace("\"","\'");
+                String newCheck = check.replace("\"", "\'");
 //                System.out.println(newCheck);
                 //this if loop is used to enter strings into sql with single quotes compared to double quotes.
-                if (indexValues == entries.size()-1){ // this is hard coded as 1 because the last value should close the statement
-                    sqlBuilder.append(newCheck+");");
+                if (indexValues == entries.size() - 1) { // this is hard coded as 1 because the last value should close the statement
+                    sqlBuilder.append(newCheck + ");");
                     break;
                 }
-                sqlBuilder.append(newCheck+", ");
+                sqlBuilder.append(newCheck + ", ");
                 indexValues++;
                 continue;  // this is need to skip over the other ford with quotes being added to the StringBuilder
             }
-            if (indexValues == entries.size()-1){ // this is hard coded as 1 because the last value should close the statement
-                sqlBuilder.append(entry.getValue()+");");
+            if (indexValues == entries.size() - 1) { // this is hard coded as 1 because the last value should close the statement
+                sqlBuilder.append(entry.getValue() + ");");
                 break;
             }
-            sqlBuilder.append(entry.getValue()+", ");
+            sqlBuilder.append(entry.getValue() + ", ");
             indexValues++;
         }
 
         String sql = String.valueOf(sqlBuilder);
 //        System.out.println(sql);
-        try{
+        try {
             Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
             int i = st.executeUpdate(sql);
             System.out.println("The number of updated rows were " + i);
@@ -159,28 +159,28 @@ public class CustomPersistenceProvider {
 
     }
 
-    public void selectAllSql(Object o){
+    public void selectAllSql(Object o) {
         String className = o.getClass().getSimpleName().toLowerCase();
-        String sql = "select * from "+ className+";";
+        String sql = "select * from " + className + ";";
 
 //        if(doesTableExist(o)){
-            try{
-                Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
-                ResultSet resultSet = st.executeQuery(sql);
-                ResultSetMetaData rsmd = resultSet.getMetaData();
-                int columnsNumber = rsmd.getColumnCount();
-                while (resultSet.next()) {
-                    for (int i = 1; i <= columnsNumber; i++) {
-                        if (i > 1) System.out.print(",  ");
-                        String columnValue = resultSet.getString(i);
+        try {
+            Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
+            ResultSet resultSet = st.executeQuery(sql);
+            ResultSetMetaData rsmd = resultSet.getMetaData();
+            int columnsNumber = rsmd.getColumnCount();
+            while (resultSet.next()) {
+                for (int i = 1; i <= columnsNumber; i++) {
+                    if (i > 1) System.out.print(",  ");
+                    String columnValue = resultSet.getString(i);
 //                    System.out.print(columnValue + " " + rsmd.getColumnName(i));// gets column names too
-                        System.out.print(columnValue);
-                    }
-                    System.out.println("");
+                    System.out.print(columnValue);
                 }
-            } catch (SQLException ex) {
-                System.out.println(ex.getMessage());
+                System.out.println("");
             }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
 //        }else{
 //            System.out.println("Your table doesn't exist bud.");
 //        }
@@ -188,10 +188,10 @@ public class CustomPersistenceProvider {
 
     }
 
-    public void dropTable(Object o){
+    public void dropTable(Object o) {
         String tableName = o.getClass().getSimpleName().toLowerCase();
-        String sql = "drop table "+tableName+";";
-        try{
+        String sql = "drop table " + tableName + ";";
+        try {
             Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
             int i = st.executeUpdate(sql);
             System.out.println("The number of updated rows were " + i);
@@ -201,25 +201,24 @@ public class CustomPersistenceProvider {
         }
     }
 
-    public void findById(Object o, int primaryKey){
+    public Object findById(Object o, int primaryKey) {
         String tableName = o.getClass().getSimpleName().toLowerCase();
         Queue<String> columns = new LinkedList<>();
         Queue<String> id = new LinkedList<>();
         Queue<String> values = new LinkedList<>();
         Class clazz = o.getClass();
         Field[] fields = clazz.getDeclaredFields();
-        for(Field f: fields){
-            if(f.getAnnotation(com.project1.annotations.Id.class) != null){
+        for (Field f : fields) {
+            if (f.getAnnotation(com.project1.annotations.Id.class) != null) {
                 id.add(f.getAnnotation(com.project1.annotations.Id.class).name());
                 columns.add(f.getAnnotation(com.project1.annotations.Id.class).name());
             }
-            if(f.getAnnotation(com.project1.annotations.Column.class) != null) {
+            if (f.getAnnotation(com.project1.annotations.Column.class) != null) {
                 columns.add(f.getAnnotation(Column.class).name());
             }
         }
-
-        String sql = "select * from "+tableName+" where "+id.poll()+"="+primaryKey+";";
-        try{
+        String sql = "select * from " + tableName + " where " + id.poll() + "=" + primaryKey + ";";
+        try {
             Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
             ResultSet resultSet = st.executeQuery(sql);
             ResultSetMetaData rsmd = resultSet.getMetaData();
@@ -237,65 +236,55 @@ public class CustomPersistenceProvider {
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
         }
-
         StringBuilder jsonBuilder = new StringBuilder();
         jsonBuilder.append("{");
         int size = columns.size();
-        for(int i=0;i<size;i++){
-            if(values.size() == 1){
-                if(isNumeric(values.peek())) {
-                    jsonBuilder.append("\"" + columns.poll() + "\":"+values.poll()+"}");
+        for (int i = 0; i < size; i++) {
+            if (values.size() == 1) {
+                if (isNumeric(values.peek())) {
+                    jsonBuilder.append("\"" + columns.poll() + "\":" + values.poll() + "}");
                     continue;
-                }else{
-                    jsonBuilder.append("\"" + columns.poll() + "\":\""+values.poll()+"\"}");
+                } else {
+                    jsonBuilder.append("\"" + columns.poll() + "\":\"" + values.poll() + "\"}");
                     continue;
                 }
             }
-            if(isNumeric(values.peek())) {
-                jsonBuilder.append("\"" + columns.poll() + "\":"+values.poll()+",");
+            if (isNumeric(values.peek())) {
+                jsonBuilder.append("\"" + columns.poll() + "\":" + values.poll() + ",");
                 continue;
-            }else{
-                jsonBuilder.append("\"" + columns.poll() + "\":\""+values.poll()+"\",");
+            } else {
+                jsonBuilder.append("\"" + columns.poll() + "\":\"" + values.poll() + "\",");
                 continue;
             }
         }
-        System.out.println(jsonBuilder);
-        String employeeJson = "{\"name\":\"sam\",\"id\":3,\"salary\":50.321,\"designation\":\"Alpha\"}";
-//        System.out.println(employeeJson);
-        //need to make a string like this with my data
-//        Class clazz = o.getClass();
-//        Field[] fields = clazz.getDeclaredFields();
-//        String className = o.getClass().getSimpleName();
-//
-//        Gson gson = new Gson();
-//        clazz obj = gson.fromJson(jsonBuilder,o)
-//        o.getClass() o = gson.fromJson(jsonBuilder,o.getClass())
-//        Employee employee1 = gson.fromJson(employeeJson, Employee.class);
-//TODO: either return a json or figure out how to put that into something can't make it into an classType of object
+//        System.out.println(jsonBuilder);//crumbs
+        String json = jsonBuilder.toString();
+        Gson gson = new Gson();
+        Object obj = gson.fromJson(json, o.getClass());
+//        System.out.println(obj);//crumbs
 
+        return clazz.cast(obj);
+    }
 
-//        return object;
-    } //TODO: delete this method and update test to be this method name
-
-    public Object findByIdTest(Class c, int primaryKey) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+    public Object findById(Class c, int primaryKey) {
         String tableName = c.getSimpleName().toLowerCase();
         System.out.println(tableName);
         Queue<String> columns = new LinkedList<>();
         Queue<String> id = new LinkedList<>();
         Queue<String> values = new LinkedList<>();
         Field[] fields = c.getDeclaredFields();
-        for(Field f: fields){
-            if(f.getAnnotation(com.project1.annotations.Id.class) != null){
+        for (Field f : fields) {
+            if (f.getAnnotation(com.project1.annotations.Id.class) != null) {
                 id.add(f.getAnnotation(com.project1.annotations.Id.class).name());
                 columns.add(f.getAnnotation(com.project1.annotations.Id.class).name());
             }
-            if(f.getAnnotation(com.project1.annotations.Column.class) != null) {
+            if (f.getAnnotation(com.project1.annotations.Column.class) != null) {
                 columns.add(f.getAnnotation(Column.class).name());
             }
         }
 
-        String sql = "select * from "+tableName+" where "+id.poll()+"="+primaryKey+";";
-        try{
+        String sql = "select * from " + tableName + " where " + id.poll() + "=" + primaryKey + ";";
+        try {
             Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
             ResultSet resultSet = st.executeQuery(sql);
             ResultSetMetaData rsmd = resultSet.getMetaData();
@@ -317,30 +306,37 @@ public class CustomPersistenceProvider {
         StringBuilder jsonBuilder = new StringBuilder();
         jsonBuilder.append("{");
         int size = columns.size();
-        for(int i=0;i<size;i++){
-            if(values.size() == 1){
-                if(isNumeric(values.peek())) {
-                    jsonBuilder.append("\"" + columns.poll() + "\":"+values.poll()+"}");
+        for (int i = 0; i < size; i++) {
+            if (values.size() == 1) {
+                if (isNumeric(values.peek())) {
+                    jsonBuilder.append("\"" + columns.poll() + "\":" + values.poll() + "}");
                     continue;
-                }else{
-                    jsonBuilder.append("\"" + columns.poll() + "\":\""+values.poll()+"\"}");
+                } else {
+                    jsonBuilder.append("\"" + columns.poll() + "\":\"" + values.poll() + "\"}");
                     continue;
                 }
             }
-            if(isNumeric(values.peek())) {
-                jsonBuilder.append("\"" + columns.poll() + "\":"+values.poll()+",");
+            if (isNumeric(values.peek())) {
+                jsonBuilder.append("\"" + columns.poll() + "\":" + values.poll() + ",");
                 continue;
-            }else{
-                jsonBuilder.append("\"" + columns.poll() + "\":\""+values.poll()+"\",");
+            } else {
+                jsonBuilder.append("\"" + columns.poll() + "\":\"" + values.poll() + "\",");
                 continue;
             }
         }
         System.out.println(jsonBuilder);
+        //this works but have to type cast the class in main
+//        String json = jsonBuilder.toString();
+//        Gson gson = new Gson();
+//        Class clazz = c;
+//        Object o = gson.fromJson(json, c);
 
         String json = jsonBuilder.toString();
         Gson gson = new Gson();
+
         Class clazz = c;
-        Object o = gson.fromJson(json,c);
+        Object o = gson.fromJson(json, c);
+        System.out.println(clazz.cast(o));
 
         return clazz.cast(o);
     } // this is being passed the class
@@ -348,6 +344,7 @@ public class CustomPersistenceProvider {
 
     // to check if a value is a number to edit my own json string builder
     private Pattern pattern = Pattern.compile("-?\\d+(\\.\\d+)?");
+
     public boolean isNumeric(String strNum) {
         if (strNum == null) {
             return false;
@@ -355,28 +352,70 @@ public class CustomPersistenceProvider {
         return pattern.matcher(strNum).matches();
     }
 
-    public void updateTable(Object o){//the select by id needs to be used first to get a primary key
-        //TODO: implement updateTable
+    public void updateTable(Object o) {//the select by id needs to be used first to get a primary key
         String tableName = o.getClass().getSimpleName().toLowerCase();
-        Queue<String> columns = new LinkedList<>();
-        Queue<String> columnsData = new LinkedList<>();
 
-        Class clazz = o.getClass();
-        Field[] fields = clazz.getDeclaredFields();
+        //TODO: make this genericin StringBuilder
+//        update car
+//        set name = 'Honda'
+//        where carid = 2;
+        //TODO: don't expect anything below to help have to go throught still
+        Gson gson = new Gson();
+        String json = gson.toJson(o);
+        JsonElement element = new JsonParser().parse(json);
+        JsonObject obj = element.getAsJsonObject(); //since you know it's a JsonObject
+        Set<Map.Entry<String, JsonElement>> entries = obj.entrySet();//will return members of your object
 
-        //this get my annotations from the class of Object o passed and the annotations .name() gives the column name and .dataType() gives the sql data type acceptable for user
-        for(Field f: fields){
-            if(f.getAnnotation(com.project1.annotations.Id.class) != null){
-                columns.add(f.getAnnotation(com.project1.annotations.Id.class).name());
-                columnsData.add(f.getAnnotation(com.project1.annotations.Id.class).dataType());
+        StringBuilder sqlBuilder = new StringBuilder();
+        StringBuilder sqlBuilder2 = new StringBuilder();
+        sqlBuilder.append("update ");
+        sqlBuilder.append(tableName.toLowerCase()+" set ");
+        int size = entries.size();
+        int index = 0;
+        for (Map.Entry<String, JsonElement> entry : entries) {
+            String check = String.valueOf(entry.getValue());
+            if (check.contains("\"")) {
+//                System.out.println("yea it contains \" what about it? HUH?!"); // needed to replace (")'s w/ (')'s
+                String newCheck = check.replace("\"", "\'");
+                if(index == 0){
+                    sqlBuilder2.append("where "+entry.getKey()+"="+newCheck+";");
+                    index++;
+                    continue;
+                }else if(index==1){
+                    sqlBuilder.append(entry.getKey() + "="+newCheck+" ");
+                    index++;
+                    continue;
+                }
+                sqlBuilder.append(", "+entry.getKey() + "="+newCheck+" ");
+                continue;  // this is need to skip over the other ford with quotes being added to the StringBuilder
             }
-            if(f.getAnnotation(com.project1.annotations.Column.class) != null) {
-                columns.add(f.getAnnotation(Column.class).name());
-                columnsData.add(f.getAnnotation(Column.class).dataType());
+            if(index == 0){
+                sqlBuilder2.append("where "+entry.getKey()+"="+entry.getValue()+";");
+                index++;
+                continue;
+            }else if(index==1){
+                sqlBuilder.append(entry.getKey() + "="+entry.getValue()+" ");
+                index++;
+                continue;
             }
+            sqlBuilder.append(", "+entry.getKey()+"="+entry.getValue()+" ");
+
         }
+//        System.out.println(sqlBuilder.toString()+sqlBuilder2.toString());// crumbs to check
+        String sql = sqlBuilder.toString()+sqlBuilder2.toString();
+        try {
+            Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
+            int i = st.executeUpdate(sql);
+            System.out.println("The number of updated rows were " + i);
+
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+
     }
 
+    public void deleteById(Object o){
 
+    }
 }
 
