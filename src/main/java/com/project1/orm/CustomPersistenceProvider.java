@@ -4,54 +4,65 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.project1.annotations.Column;
-import com.project1.config.ConnectionUtil;
-import com.project1.model.Car;
-
+import com.project1.annotations.*;
+import com.project1.config.ApplicationUtil;
+import com.project1.config.DataSource;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 public class CustomPersistenceProvider {
+
+    private Queue<String> statements = new LinkedList<>();
 
     public CustomPersistenceProvider() {
 
     }
 
-    public void persist(Object o) {
+    public Queue<String> getSql(){
 
-        if (doesTableExist(o)) {
-            System.out.println("Table exists alright");
-
-        } else {
-            String sql = createTableSQL(o);
-
-            try {
-                Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
-                int i = st.executeUpdate(sql);
-                System.out.println("The number of updated rows were " + i);
-
-            } catch (SQLException ex) {
-                System.out.println(ex.getMessage());
-            }
-        }
-
+        return statements;
     }
+
+    public void setSql(String sql){
+        statements.add(sql);
+    }
+
+//    public void create(Object o) {
+//
+//        if (doesTableExist(o)) {
+//            System.out.println("Table exists alright");
+//
+//        } else {
+//            String sql = create(o);
+//            try {
+//                Statement st = DataSource.getConnection().createStatement();
+//                int i = st.executeUpdate(sql);
+//                System.out.println("The number of updated rows were " + i);
+//
+//            } catch (SQLException ex) {
+//                System.out.println(ex.getMessage());
+//            }
+//        }
+//    }
 
     public boolean doesTableExist(Object o) {//TODO FIX THIS, NOT WORKING NOW, fixed! needed to have the table saved to lowercase.
         String tableNameCheck = o.getClass().getSimpleName().toLowerCase();//the name of the tables will be the model class names.
 
         try {
-            Connection con = ConnectionUtil.getInstance().getConnection();
+            Connection con = DataSource.getConnection();
 
             DatabaseMetaData meta = con.getMetaData();
             ResultSet res = meta.getTables(null, null, null,
                     new String[]{"TABLE"});
             while (res.next()) {
                 if (tableNameCheck.equals(res.getString("TABLE_NAME"))) {
-                    System.out.println("Object table already exists.");// BreadCrumb to test if boolean switches
+//                    System.out.println("Object table already exists.");// BreadCrumb to test if boolean switches
                     return true;
                 }
 //                System.out.println("in while loop");//bread crumbs
@@ -65,7 +76,7 @@ public class CustomPersistenceProvider {
         return false;
     }
 
-    public String createTableSQL(Object o) {
+    public void create(Object o) {
         Queue<String> columns = new LinkedList<>();//this holds the table names and data types
 
         Class clazz = o.getClass();
@@ -100,8 +111,16 @@ public class CustomPersistenceProvider {
         //System.out.println(sqlBuilder); // to test the database with first
 
         String sql = String.valueOf(sqlBuilder);
-//        System.out.println(sql);//TODO: THIS IS THE RIGHT SQL
-        return sql;
+        if (!doesTableExist(o)) {
+            try {
+                Statement st = DataSource.getConnection().createStatement();
+                int i = st.executeUpdate(sql);
+                System.out.println("The number of updated rows were " + i);
+
+            } catch (SQLException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
     }
 
     public void insertInTable(Object o) {
@@ -147,9 +166,10 @@ public class CustomPersistenceProvider {
         }
 
         String sql = String.valueOf(sqlBuilder);
+        setSql(sql);
 //        System.out.println(sql);
         try {
-            Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
+            Statement st = DataSource.getConnection().createStatement();
             int i = st.executeUpdate(sql);
             System.out.println("The number of updated rows were " + i);
 
@@ -159,16 +179,59 @@ public class CustomPersistenceProvider {
 
     }
 
-    public void selectAllSql(Object o) {
-        String className = o.getClass().getSimpleName().toLowerCase();
-        String sql = "select * from " + className + ";";
+    //TODO: add this to the read me
+    public void selectByInnerJoin(Object o1, Object o2){// takes the object of a table with the object of the reference table.
+        String tableNameO1 = o1.getClass().getSimpleName().toLowerCase();
+        Queue<String> id = new LinkedList<>();
+        String tableNameO2 = o2.getClass().getSimpleName().toLowerCase();
+        Queue<String> rKey = new LinkedList<>();
+        Field[] fieldsO1 = o1.getClass().getDeclaredFields();
+        Field[] fieldsO2 = o2.getClass().getDeclaredFields();
 
-//        if(doesTableExist(o)){
+        for(Field f: fieldsO1){
+            if (f.getAnnotation(com.project1.annotations.Id.class) != null) {
+                id.add(f.getAnnotation(com.project1.annotations.Id.class).name());
+            }
+        }
+
+        for(Field f: fieldsO2){
+            if (f.getAnnotation(com.project1.annotations.Column.class) != null && f.getAnnotation(com.project1.annotations.Column.class).toString().contains("reference")) {
+                rKey.add(f.getAnnotation(com.project1.annotations.Column.class).name());
+            }
+        }
+        System.out.println("");
+        String sql = "select * from "+tableNameO1+" inner join "+tableNameO2+" on "+tableNameO1+"."+id.poll() +"="+ tableNameO2+"."+rKey.poll()+";";
         try {
-            Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
+            Statement st = DataSource.getConnection().createStatement();
             ResultSet resultSet = st.executeQuery(sql);
             ResultSetMetaData rsmd = resultSet.getMetaData();
             int columnsNumber = rsmd.getColumnCount();
+            while (resultSet.next()) {
+                for (int i = 1; i <= columnsNumber; i++) {
+                    if (i > 1) System.out.print(",  ");
+                    String columnValue = resultSet.getString(i);
+                    System.out.print( rsmd.getColumnName(i)+ ": " +columnValue );// gets column names too
+//                    System.out.print(columnValue);
+                }
+                System.out.println("");
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+
+    }
+
+    public void selectAllSql(Object o) {
+        String className = o.getClass().getSimpleName().toLowerCase();
+        String sql = "select * from " + className + ";";
+        System.out.println("");
+        if(doesTableExist(o)){
+        try {
+            Statement st = DataSource.getConnection().createStatement();
+            ResultSet resultSet = st.executeQuery(sql);
+            ResultSetMetaData rsmd = resultSet.getMetaData();
+            int columnsNumber = rsmd.getColumnCount();
+            tableTitle(o);
             while (resultSet.next()) {
                 for (int i = 1; i <= columnsNumber; i++) {
                     if (i > 1) System.out.print(",  ");
@@ -181,33 +244,36 @@ public class CustomPersistenceProvider {
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
         }
-//        }else{
-//            System.out.println("Your table doesn't exist bud.");
-//        }
-        //TODO: Fix if/else if needed
+        }else{
+            System.out.println("Your table doesn't exist bud.");
+            create(o);
+            System.out.println("Now it does!");
+        }
 
     }
 
     public void dropTable(Object o) {
         String tableName = o.getClass().getSimpleName().toLowerCase();
-        String sql = "drop table " + tableName + ";";
-        try {
-            Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
-            int i = st.executeUpdate(sql);
-            System.out.println("The number of updated rows were " + i);
+        String sql = "drop table " + tableName +" CASCADE;";
+        if(doesTableExist(o)) {
+            try {
+                Statement st = DataSource.getConnection().createStatement();
+                int i = st.executeUpdate(sql);
+                System.out.println("The number of updated rows were " + i);
 
-        } catch (SQLException ex) {
-            System.out.println(ex.getMessage());
+            } catch (SQLException ex) {
+                System.out.println(ex.getMessage());
+            }
         }
     }
 
-    public Object findById(Object o, int primaryKey) {
+    public <T>T findById(Object o, int primaryKey) throws ClassNotFoundException {
         String tableName = o.getClass().getSimpleName().toLowerCase();
         Queue<String> columns = new LinkedList<>();
         Queue<String> id = new LinkedList<>();
         Queue<String> values = new LinkedList<>();
-        Class clazz = o.getClass();
-        Field[] fields = clazz.getDeclaredFields();
+//        Class clazz = o.getClass();
+        Field[] fields = o.getClass().getDeclaredFields();
         for (Field f : fields) {
             if (f.getAnnotation(com.project1.annotations.Id.class) != null) {
                 id.add(f.getAnnotation(com.project1.annotations.Id.class).name());
@@ -219,18 +285,13 @@ public class CustomPersistenceProvider {
         }
         String sql = "select * from " + tableName + " where " + id.poll() + "=" + primaryKey + ";";
         try {
-            Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
+            Statement st = DataSource.getConnection().createStatement();
             ResultSet resultSet = st.executeQuery(sql);
             ResultSetMetaData rsmd = resultSet.getMetaData();
             int columnsNumber = rsmd.getColumnCount();
             while (resultSet.next()) {
                 for (int i = 1; i <= columnsNumber; i++) {
-//                    if (i > 1) System.out.print(",  ");
-//                    String columnValue = resultSet.getString(i);
                     values.add(resultSet.getString(i));
-//                    System.out.print(columnValue + " " + rsmd.getColumnName(i));// gets column names too
-//                    System.out.print(columnValue); // saves the output as a string but i need it in a collection
-//                    System.out.println(values); // this shows that i've gotten the data for the id
                 }
             }
         } catch (SQLException ex) {
@@ -261,14 +322,13 @@ public class CustomPersistenceProvider {
         String json = jsonBuilder.toString();
         Gson gson = new Gson();
         Object obj = gson.fromJson(json, o.getClass());
-//        System.out.println(obj);//crumbs
 
-        return clazz.cast(obj);
+        return (T) obj;
     }
 
-    public Object findById(Class c, int primaryKey) {
+    public <T>T findById(Class<T> c, int primaryKey) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String tableName = c.getSimpleName().toLowerCase();
-        System.out.println(tableName);
+//        System.out.println(tableName); //crumbs
         Queue<String> columns = new LinkedList<>();
         Queue<String> id = new LinkedList<>();
         Queue<String> values = new LinkedList<>();
@@ -285,7 +345,7 @@ public class CustomPersistenceProvider {
 
         String sql = "select * from " + tableName + " where " + id.poll() + "=" + primaryKey + ";";
         try {
-            Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
+            Statement st = DataSource.getConnection().createStatement();
             ResultSet resultSet = st.executeQuery(sql);
             ResultSetMetaData rsmd = resultSet.getMetaData();
             int columnsNumber = rsmd.getColumnCount();
@@ -324,23 +384,16 @@ public class CustomPersistenceProvider {
                 continue;
             }
         }
-        System.out.println(jsonBuilder);
-        //this works but have to type cast the class in main
-//        String json = jsonBuilder.toString();
-//        Gson gson = new Gson();
-//        Class clazz = c;
-//        Object o = gson.fromJson(json, c);
+//        System.out.println(jsonBuilder.toString()); //crumbs
 
         String json = jsonBuilder.toString();
         Gson gson = new Gson();
-
         Class clazz = c;
         Object o = gson.fromJson(json, c);
-        System.out.println(clazz.cast(o));
 
-        return clazz.cast(o);
+//       return c.cast(o);
+        return (T) o;
     } // this is being passed the class
-
 
     // to check if a value is a number to edit my own json string builder
     private Pattern pattern = Pattern.compile("-?\\d+(\\.\\d+)?");
@@ -355,11 +408,6 @@ public class CustomPersistenceProvider {
     public void updateTable(Object o) {//the select by id needs to be used first to get a primary key
         String tableName = o.getClass().getSimpleName().toLowerCase();
 
-        //TODO: make this genericin StringBuilder
-//        update car
-//        set name = 'Honda'
-//        where carid = 2;
-        //TODO: don't expect anything below to help have to go throught still
         Gson gson = new Gson();
         String json = gson.toJson(o);
         JsonElement element = new JsonParser().parse(json);
@@ -403,8 +451,9 @@ public class CustomPersistenceProvider {
         }
 //        System.out.println(sqlBuilder.toString()+sqlBuilder2.toString());// crumbs to check
         String sql = sqlBuilder.toString()+sqlBuilder2.toString();
+        setSql(sql);
         try {
-            Statement st = ConnectionUtil.getInstance().getConnection().createStatement();
+            Statement st = DataSource.getConnection().createStatement();
             int i = st.executeUpdate(sql);
             System.out.println("The number of updated rows were " + i);
 
@@ -414,7 +463,49 @@ public class CustomPersistenceProvider {
 
     }
 
-    public void deleteById(Object o){
+    public void deleteById(Object o, int primaryKey) {
+        String tableName = o.getClass().getSimpleName().toLowerCase();
+        Queue<String> id = new LinkedList<>();
+        Field[] fields = o.getClass().getDeclaredFields();
+
+        for (Field f : fields) {
+            if (f.getAnnotation(com.project1.annotations.Id.class) != null)
+                id.add(f.getAnnotation(com.project1.annotations.Id.class).name().toString());
+        }
+
+        String sql = "delete from " + tableName + " where " + id.poll() + "=" + primaryKey + ";";
+
+//        System.out.println(sql);//crumbs
+        try {
+            Statement st = DataSource.getConnection().createStatement();
+            int i = st.executeUpdate(sql);
+            System.out.println("The number of updated rows were " + i);
+
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    public void tableTitle(Object o){
+        Queue<String> columns = new LinkedList<>();//this holds the table names and data types
+
+        Class clazz = o.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+
+        //this get my annotations from the class of Object o passed and the annotations .name() gives the column name and .dataType() gives the sql data type acceptable for user
+        for (Field f : fields) {
+            if (f.getAnnotation(com.project1.annotations.Id.class) != null) {
+                columns.add(f.getAnnotation(com.project1.annotations.Id.class).name());
+            }
+            if (f.getAnnotation(com.project1.annotations.Column.class) != null) {
+                columns.add(f.getAnnotation(Column.class).name());
+            }
+        }
+        while(columns.peek() != null){
+            System.out.print(columns.poll()+"  ");
+            if(columns.peek() == null)
+                System.out.println("");
+        }
 
     }
 }

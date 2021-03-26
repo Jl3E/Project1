@@ -1,0 +1,7 @@
+com\project1\model\EmployeeTest.class
+com\project1\model\BankTest.class
+com\project1\orm\CustomTest.class
+com\project1\model\CarTest.class
+com\project1\annotations\TestAnnos$TableAnnotationTest.class
+com\project1\annotations\TestAnnos.class
+com\project1\TestDriver.class

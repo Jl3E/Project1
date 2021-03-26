@@ -9,14 +9,14 @@ public class Car {
     private int carId;
     @Column(name = "name", dataType ="text")
     private String name;
-    @Column(name = "price", dataType ="float")
-    private float price;
+    @Column(name = "price", dataType ="NUMERIC")
+    private double price;
     @Column(name = "preOwned", dataType ="boolean")
     private boolean preOwned;
 
     public Car() {}
 
-    public Car(int carId,String name, float price, boolean preOwned) {
+    public Car(int carId,String name, double price, boolean preOwned) {
         this.carId = carId;
         this.name = name;
         this.price = price;
@@ -31,7 +31,7 @@ public class Car {
         this.name = name;
     }
 
-    public float getPrice() {
+    public double getPrice() {
         return price;
     }
 
@@ -39,11 +39,23 @@ public class Car {
         this.price = price;
     }
 
-    public boolean isPreOwned() {
+    public boolean getPreOwned() {
         return preOwned;
     }
 
     public void setPreOwned(boolean preOwned) {
         this.preOwned = preOwned;
+    }
+
+    public int getCarId() {
+        return carId;
+    }
+
+    public void setCarId(int carId) {
+        this.carId = carId;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
     }
 }

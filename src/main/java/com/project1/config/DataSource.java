@@ -1,0 +1,28 @@
+package com.project1.config;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public class DataSource {
+    private static HikariConfig config = new HikariConfig();
+    private static HikariDataSource ds;
+
+    static {
+        config.setJdbcUrl( "jdbc:postgresql://samplepsql.cd1hrpx24rhn.us-west-1.rds.amazonaws.com:5432/postgres?currentSchema=project1" );
+        config.setUsername( "joe" );
+        config.setPassword( "momma" );
+        config.addDataSourceProperty( "cachePrepStmts" , "true" );
+        config.addDataSourceProperty( "prepStmtCacheSize" , "250" );
+        config.addDataSourceProperty( "prepStmtCacheSqlLimit" , "2048" );
+        ds = new HikariDataSource( config );
+    }
+
+    private DataSource() {}
+
+    public static Connection getConnection() throws SQLException {
+        return ds.getConnection();
+    }
+}

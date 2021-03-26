@@ -9,14 +9,14 @@ public class Employee {
     private int id;
     @Column(name ="name", dataType ="text")
     private String name;
-    @Column(name = "salary", dataType ="float")
-    private float salary;
+    @Column(name = "salary", dataType ="NUMERIC")
+    private double salary;
     @Column(name = "designation", dataType ="text")
     private String designation;
 
     public Employee() {}
 
-    public Employee(int id, String name, float salary, String designation) {
+    public Employee(int id, String name, double salary, String designation) {
         this.id = id;
         this.name = name;
         this.salary = salary;
@@ -39,7 +39,7 @@ public class Employee {
         this.id = id;
     }
 
-    public float getSalary() {
+    public double getSalary() {
         return salary;
     }
 
