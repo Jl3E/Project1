@@ -17,21 +17,23 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 public class CustomPersistenceProvider {
-    private Deque<String> statements = new ArrayDeque<>();
-    private Queue<String> valuesId;
-    private Queue<String> columnsId;
-    private Boolean cacheOn = false;
+    private Deque<String> statements = new ArrayDeque<>(); // for the cache statements
+    private Queue<String> valuesId; // the values from the database that are collected when cache is committed
+    private Boolean cacheOn = false;// to turn the cache on.
 
     public CustomPersistenceProvider() { }
 
+    // manually call on main to turn cache on.
     public void setCacheOn(){
         cacheOn = true;
     }
 
+    // manually turn cache off its its turned on.
     public void setCacheOff(){
         cacheOn = false;
     }
 
+    // if the cache is set to be collected all of the strings from the methods will be stored and executed.
     public void persist(){
         if(!cacheOn){
             System.out.println("Set your cache on with the command: cpp.setCacheOn();");
@@ -113,15 +115,18 @@ public class CustomPersistenceProvider {
         }
     }
 
+    // this retrieves the sql statements.
     public Queue<String> getSql(){
 
         return statements;
     }
 
+    // this goes through all the methods and collects the sql statements.
     public void setSql(String sql){
         statements.add(sql);
     }
 
+    // boolean for if the table exists in the database
     public boolean doesTableExist(Object o) {//TODO FIX THIS, NOT WORKING NOW, fixed! needed to have the table saved to lowercase.
         String tableNameCheck = o.getClass().getSimpleName().toLowerCase();//the name of the tables will be the model class names.
 
@@ -147,6 +152,7 @@ public class CustomPersistenceProvider {
         return false;
     }
 
+    // create a table given a class object
     public void create(Object o) {
         Queue<String> columns = new LinkedList<>();//this holds the table names and data types
 
@@ -197,7 +203,7 @@ public class CustomPersistenceProvider {
         }else{
             persist();
         }
-    }
+    }// create a table
 
     public void insertInTable(Object o) {
         String className = o.getClass().getSimpleName(); // this gives the classname to be used as the table name
