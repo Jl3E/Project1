@@ -3,6 +3,7 @@ package com.project1.model;
 import com.project1.annotations.*;
 import com.project1.annotations.Table;
 
+
 @Table(name = "car")
 public class Car {
     @Id(name = "carId", dataType = "Integer primary key")

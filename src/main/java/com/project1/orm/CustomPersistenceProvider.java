@@ -5,15 +5,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.project1.annotations.*;
-import com.project1.config.ApplicationUtil;
 import com.project1.config.DataSource;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 public class CustomPersistenceProvider {
@@ -362,13 +359,12 @@ public class CustomPersistenceProvider {
         }
     }
 
-    // can't cache this
+
     public <T>T findById(Object o, int primaryKey) throws ClassNotFoundException {
         String tableName = o.getClass().getSimpleName().toLowerCase();
         Queue<String> columns = new LinkedList<>();
         Queue<String> id = new LinkedList<>();
         Queue<String> values = new LinkedList<>();
-//        Class clazz = o.getClass();
         Field[] fields = o.getClass().getDeclaredFields();
         for (Field f : fields) {
             if (f.getAnnotation(com.project1.annotations.Id.class) != null) {
@@ -398,23 +394,22 @@ public class CustomPersistenceProvider {
             }
         }else{
             persist();
-            String json = jsonBuilder(columns, valuesId);
+            String json = jsonBuilderz(columns, valuesId);
             Gson gson = new Gson();
             Object obj = gson.fromJson(json, o.getClass());
 
             return (T) obj;
         }
-        String json = jsonBuilder(columns, values);
+        String json = jsonBuilderz(columns, values);
         Gson gson = new Gson();
         Object obj = gson.fromJson(json, o.getClass());
 
         return (T) obj;
     }
 
-    // can't cache this
+
     public <T>T findById(Class<T> c, int primaryKey) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String tableName = c.getSimpleName().toLowerCase();
-//        System.out.println(tableName); //crumbs
         Queue<String> columns = new LinkedList<>();
         Queue<String> id = new LinkedList<>();
         Queue<String> values = new LinkedList<>();
@@ -453,7 +448,7 @@ public class CustomPersistenceProvider {
             }
         }else{
             persist();
-            String json = jsonBuilder(columns, valuesId);
+            String json = jsonBuilderz(columns, valuesId);
             Gson gson = new Gson();
             Class clazz = c;
             Object o = gson.fromJson(json, c);
@@ -461,7 +456,7 @@ public class CustomPersistenceProvider {
             return (T) o;
         }
 
-        String json = jsonBuilder(columns, values);
+        String json = jsonBuilderz(columns, values);
         System.out.println(json);
         Gson gson = new Gson();
         Class clazz = c;
@@ -471,7 +466,7 @@ public class CustomPersistenceProvider {
         return (T) o;
     } // this is being passed the class
 
-    public String jsonBuilder(Queue<String> columns, Queue<String> values ){
+    public String jsonBuilderz(Queue<String> columns, Queue<String> values ){
         StringBuilder jsonBuilder = new StringBuilder();
         jsonBuilder.append("{");
         int size = columns.size();
@@ -502,6 +497,7 @@ public class CustomPersistenceProvider {
     // to check if a value is a number to edit my own json string builder
     private Pattern pattern = Pattern.compile("-?\\d+(\\.\\d+)?");
 
+    // to check if a value is a number to edit my own json string builder
     public boolean isNumeric(String strNum) {
         if (strNum == null) {
             return false;
@@ -509,6 +505,7 @@ public class CustomPersistenceProvider {
         return pattern.matcher(strNum).matches();
     }
 
+    // takes in a changed object to update
     public void updateTable(Object o) {//the select by id needs to be used first to get a primary key
         String tableName = o.getClass().getSimpleName().toLowerCase();
 
@@ -570,6 +567,7 @@ public class CustomPersistenceProvider {
         }
     }
 
+    //deletes row by id
     public void deleteById(Object o, int primaryKey) {
         String tableName = o.getClass().getSimpleName().toLowerCase();
         Queue<String> id = new LinkedList<>();
@@ -596,6 +594,7 @@ public class CustomPersistenceProvider {
         }
     }
 
+    // to show the column names for selectAll
     public void tableTitle(Object o){
         Queue<String> columns = new LinkedList<>();//this holds the table names and data types
 
