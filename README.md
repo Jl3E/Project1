@@ -13,12 +13,9 @@ A custom object relational mapping (ORM) framework, written in Java, which allow
 * JUnit
 * PostgreSQL 
 * Maven 
-* AWS RDS 
-* AWS EC2
-* AWS CodeBuild
-* AWS CodePipeline
-* Elastic Beanstalk
-* Mockito, DevOps
+* AWS RDS
+* Mockito 
+* DevOps
 * DBBeaver
 * Git
 * XML
